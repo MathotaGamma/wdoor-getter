@@ -1,0 +1,43 @@
+name: Deploy wdoor to GitHub Pages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * *' # 毎日4:00に自動更新
+  push:
+    branches: ["main", "master"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download wdoorYYYY.7z
+        run: |
+          CURRENT_YEAR=$(date +%Y)
+          for year in $(seq 2008 $CURRENT_YEAR); do
+            FILE="wdoor${year}.7z"
+            URL="http://u-tokyo.ac.jp{FILE}"
+            echo "Downloading ${FILE}..."
+            curl -fL -s -o "${FILE}" "${URL}" || rm -f "${FILE}"
+          done
+          ls -lh
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
